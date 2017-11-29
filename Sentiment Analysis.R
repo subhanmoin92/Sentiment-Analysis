@@ -30,6 +30,7 @@ library(tidyr)
 ##-----------------------------------------------------------building a lexicon file dictionary ----------------------------------------------
 
 
+
 url<-"https://www.powerthesaurus.org/anger/synonyms/"
 A <- NULL
 N_pages<-72
@@ -56,13 +57,15 @@ post<-getPost(post = page$id[4], n=1000,token=fb_oauth)
 post[3]
 post.df<-as.data.frame(post[3])
 
+##getting only the message portion of the data
 post1.df <- sapply(post.df$comments.message, function(x) iconv(x, to='UTF-8', sub='byte'))
 post1.df<-as.data.frame(post1.df)
+##renaming the columns
 colnames(post1.df)[1]<-"text"
-
+##reading a file for sentiment analysis
 anger<-readLines("angry_words.txt")
 
-
+##sentiment score function and passing the anger words
 score.sentiment<-function(sentences, anger.words, .progress='none')
 {
   # Parameters
@@ -107,7 +110,7 @@ score.sentiment<-function(sentences, anger.words, .progress='none')
   scores.df<- data.frame(text=sentences, score=scores)
   return(scores.df)
 }
-
+##calling the function
 scores_facebook<-score.sentiment(post1.df$text, anger, .progress='text')
 
 #Convert sentiment scores from numeric to character to enable the gsub function 
@@ -117,14 +120,13 @@ scores_facebook$score_chr<-as.character(scores_facebook$score)
 scores_facebook$score_chr<-gsub("^0$", "Neutral", scores_facebook$score_chr)
 scores_facebook$score_chr<-gsub("^1$|^2$|^3$|^4$|^5$|^6$", "Angry", scores_facebook$score_chr)
 scores_facebook$score_chr<-gsub("^7$|^8$|^9$|^10$|^11$|^12$", "Very Angry", scores_facebook$score_chr)
-
 scores_facebook$score_chr<-gsub("^13$|^14$|^15|^16$|^17$|^18$|^19$|^20$", "Lost it", scores_facebook$score_chr)
 
 View(scores_facebook)
 
 scores_facebook%>% group_by(score)%>%summarise(MeanScore=mean(scores_facebook$score),MedianScore=median(scores_facebook$score))
 
-
+##finding the maximum and minimum sentiment score
 max(scores_facebook$score)
 min(scores_facebook$score)
 
